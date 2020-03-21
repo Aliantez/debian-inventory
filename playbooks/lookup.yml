@@ -1,0 +1,43 @@
+---
+- hosts: debian
+  become: true
+  gather_facts: yes
+
+  tasks:
+
+
+  - name: looking for apache
+    package_facts:
+     manager: auto
+  - set_fact:
+     linia: "hostname{{':'}} {{ ansible_fqdn }}\n  IP{{':'}} {{ ansible_default_ipv4.address }}\n  linux_version{{':'}} {{ ansible_distribution_version }}\n  kernel{{':'}} {{ ansible_kernel }}"
+  - set_fact:
+     linia: "{{ linia }}\n  apache_version{{':'}} {{ ansible_facts.packages['apache2'][0].version }}"
+    when: "'apache2' in ansible_facts.packages"
+
+  - name: looking for ports
+    ignore_errors: True
+    listen_ports_facts:
+  - set_fact:
+     linia: "{{ linia }}\n  apache_ports{{':'}} {{ ansible_facts.tcp_listen | selectattr('name', 'in', 'apache2') | map(attribute='port') | unique | sort | list }}"
+    when: "'apache2' in ansible_facts.tcp_listen | map(attribute='name')"
+    ignore_errors: True
+
+  - name: save data inventory
+    local_action: lineinfile backup=yes create=yes line="{{ linia }}" insertafter=EOF dest="{{ inv_file }}"
+
+  - debug:
+     msg: "{{ linia }}"
+
+  - name: add cert
+    copy:
+      src: "{{ cert_file }}"
+      dest: "{{ dest_ca_dir }}{{ cert_company_name}}.crt"
+      owner: root
+      group: root
+      mode: 0644
+    when: ansible_os_family == "Debian"
+
+  - name: update certs
+    shell: /usr/sbin/update-ca-certificates
+    when: ansible_os_family == "Debian"

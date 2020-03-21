@@ -1,0 +1,22 @@
+[debian]
+192.168.0.[5:60]
+#172.16.0.[100:120]
+#10.0.0.[41:42]
+
+[all:vars]
+ansible_sudo=yes
+ansible_connection=ssh
+ansible_host_key_checking=false
+
+ansible_user=user
+# if you want store password for the user using plain-text uncomment line bellow
+#ansible_ssh_pass=password
+
+# file to store information from systems (it will be backuped with date before next ansible script usage)
+inv_file=../hosts.txt
+
+# cert file to propagate
+cert_file=../cert/CA.crt
+# name of file cert and path on remote systems
+cert_company_name=acme
+dest_ca_dir=/usr/local/share/ca-certificates/
